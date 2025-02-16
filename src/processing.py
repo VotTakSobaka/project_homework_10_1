@@ -21,3 +21,28 @@ print(filtered_result_executed)
 
 filtered_result_canceled = filter_by_state(input_data, 'CANCELED')
 print(filtered_result_canceled)
+
+
+def sort_by_date(data, reverse: bool = True) -> list:
+    """
+    Сортирует список словарей по значению ключа 'date'.
+
+    Функция принимает список словарей и возвращает новый список,
+    отсортированный по дате.
+
+    """
+    return sorted(data, key=lambda x: x['date'], reverse=reverse)
+
+
+input_data = [
+    {'id': 1, 'date': '2023-01-01'},
+    {'id': 2, 'date': '2022-12-31'},
+    {'id': 3, 'date': '2023-01-02'}
+]
+
+sorted_result_desc = sort_by_date(input_data)
+print(sorted_result_desc)
+
+# Сортировка по дате в порядке возрастания
+sorted_result_asc = sort_by_date(input_data, reverse=False)
+print(sorted_result_asc)
