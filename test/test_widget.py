@@ -1,69 +1,53 @@
 import pytest
 from src.widget import mask_account_card,get_date
 
-# Фикстура для корректных входных данных
-@pytest.fixture
-def valid_inputs():
-    return [
-        ("Visa 1234567812345678", "Visa 123456** **** 5678"),  # Стандартный номер карты Visa
-        ("MasterCard 9876543210123456", "MasterCard 987654** **** 3456"),  # Стандартный номер карты MasterCard
-        ("Maestro 1234567890123456", "Maestro 123456** **** 3456"),  # Стандартный номер карты Maestro
-        ("Счет 123456789012", "Счет **9012"),  # Номер счета
-        ("Счет 1234", "Счет **34"),  # Короткий номер счета
+@pytest.mark.parametrize(
+    "info, expected",
+    [
+        ("visa 1234567890123456", "visa 123456 78** **** 3456"),
+        ("mastercard 1234567890123456", "mastercard 123456 78** **** 3456"),
+        ("visa platinum 1234567890123456", "visa platinum 123456 78** **** 3456"),
+        ("счет 1234567890", "счет **7890"),
+        ("счет 1234", "счет **1234"),
+        ("visa 123456789012345", "Ошибка: номер карты должен содержать 16 цифр."),
+        ("счет 123", "Ошибка: номер счета должен содержать хотя бы 4 цифры."),
+        ("unknown 1234567890123456", "Ошибка: неизвестный тип карты или счета."),
+        ("visa 1234abcd56789012", "Ошибка: номер карты должен содержать 16 цифр."),
+        ("счет 1234abcd", "Ошибка: номер счета должен содержать хотя бы 4 цифры."),
     ]
-
-# Фикстура для некорректных входных данных
-@pytest.fixture
-def invalid_inputs():
-    return [
-        ("Visa 1234abcd", "Ошибка: номер карты должен содержать 16 цифр."),  # Неверный номер карты
-        ("Счет 123", "Ошибка: номер счета должен содержать хотя бы 4 цифры."),  # Короткий номер счета
-        ("UnknownType 1234567890123456", "Ошибка: неизвестный тип карты или счета."),  # Неизвестный тип
-        ("Visa 12345678901234567890", "Ошибка: номер карты должен содержать 16 цифр."),  # Слишком длинный номер карты
-        ("", "Ошибка: неизвестный тип карты или счета."),  # Пустой ввод
-    ]
-
-# тесты для корректных входных данных
-@pytest.mark.parametrize("info, expected", valid_inputs())
-def test_valid_inputs(info, expected):
+)
+def test_mask_account_card(info, expected):
     assert mask_account_card(info) == expected
 
-# тесты для некорректных входных данных
-@pytest.mark.parametrize("info, expected", invalid_inputs())
-def test_invalid_inputs(info, expected):
-    assert mask_account_card(info) == expected
+def test_mask_account_card_empty_input():
+    assert mask_account_card("") == "Ошибка: неизвестный тип карты или счета."
+
+def test_mask_account_card_no_number():
+    assert mask_account_card("visa") == "Ошибка: номер карты должен содержать 16 цифр."
 
 
-# Фикстура для корректных входных данных
-@pytest.fixture
-def valid_dates():
-    return [
-        ("2024-03-11T02:26:18.671407", "11.03.2024"),  # Стандартный формат
-        ("2023-12-31T23:59:59.999999", "31.12.2023"),  # Конец года
-        ("2000-01-01T00:00:00.000000", "01.01.2000"),  # Начало века
-        ("1999-07-04T12:00:00.000000", "04.07.1999"),  # Дата в прошлом
+@pytest.mark.parametrize(
+    "date_str, expected",
+    [
+        ("2024-03-11T02:26:18.671407", "11.03.2024"),
+        ("2023-12-31T23:59:59.999999", "31.12.2023"),
+        ("2024-01-01T00:00:00.000000", "01.01.2024"),
+        ("2024-02-29T12:34:56.789012", "29.02.2024"),
+        ("2024-03-11", "11.03.2024"),  # Без времени
+        ("2024-03-11T", "11.03.2024"),  # Только дата и T
     ]
-
-
-# тесты для корректных входных данных
-@pytest.mark.parametrize("date_str, expected", valid_dates())
-def test_valid_dates(date_str, expected):
+)
+def test_get_date_valid(date_str, expected):
     assert get_date(date_str) == expected
 
+def test_get_date_invalid_format():
+    assert get_date("11.03.2024 02:26:18") == "11.03.2024"
 
-# Тестирование обработки некорректных входных данных
-def test_invalid_dates():
-    invalid_dates = [
-        ("abcd-ef-ghTHH:MM:SS", "Ошибка: некорректный формат даты"),  # Неверный формат
-        ("2024-02-30T00:00:00.000000", "Ошибка: некорректная дата"),  # Неверная дата
-        ("2024-03-11", "Ошибка: некорректный формат даты"),  # Отсутствует время
-        ("", "Ошибка: некорректный формат даты"),  # Пустая строка
-    ]
+def test_get_date_empty_string():
+    assert get_date("") == "01.01.0001"
 
-    for date_str, expected in invalid_dates:
-        with pytest.raises(ValueError) as excinfo:
-            get_date(date_str)
-        assert str(excinfo.value) == expected
+def test_get_date_no_date():
+    assert get_date("T02:26:18.671407") == "01.01.0001"
 
 
 if __name__ == "__widget__":

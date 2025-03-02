@@ -2,79 +2,96 @@ import pytest
 from src.masks import get_mask_account, get_mask_card_number
 
 
-# Фикстура для корректных входных данных
 @pytest.fixture
-def valid_card_numbers():
-    return [
-        ("1234567812345678", "** ** ** ** 5678"),  # Стандартный номер карты
-        ("9876543210123456", "** ** ** ** 3456"),  # Стандартный номер карты
-        ("1234567890123456", "** ** ** ** 3456"),  # Стандартный номер карты
-        ("1234", "1234"),  # Короткий номер карты
-        ("", "Ошибка: некорректный номер карты")  # Пустой ввод
+def valid_card_number():
+    return "1234 5678 9012 3456"
+
+@pytest.fixture
+def invalid_card_number_non_digit():
+    return "1234 5678 9012 abcd"
+
+@pytest.fixture
+def invalid_card_number_length():
+    return "1234 5678 9012 345"
+
+@pytest.fixture
+def empty_card_number():
+    return ""
+
+def test_mask_valid_card_number(valid_card_number):
+    assert get_mask_card_number(valid_card_number) == "123456 78** **** 3456"
+
+def test_non_digit_card_number(invalid_card_number_non_digit):
+    assert get_mask_card_number(invalid_card_number_non_digit) == (
+        "Ошибка: номер карты должен содержать только цифры.")
+
+def test_invalid_length_card_number(invalid_card_number_length):
+    assert get_mask_card_number(invalid_card_number_length) == (
+        "Ошибка: номер карты должен содержать 16 цифр.")
+
+def test_empty_card_number(empty_card_number):
+    assert get_mask_card_number(empty_card_number) == (
+        "Ошибка: номер карты должен содержать только цифры.")
+
+@pytest.mark.parametrize(
+    "card_number, expected",
+    [
+        ("1234567890123456", "123456 78** **** 3456"),
+        ("1234 5678 9012 3456", "123456 78** **** 3456"),
+        ("1234-5678-9012-3456", "Ошибка: номер карты должен содержать только цифры."),
+        ("1234a567890123456", "Ошибка: номер карты должен содержать только цифры."),
+        ("123456789012345", "Ошибка: номер карты должен содержать 16 цифр."),
+        ("12345678901234567", "Ошибка: номер карты должен содержать 16 цифр."),
     ]
-
-
-# тесты для корректных входных данных
-@pytest.mark.parametrize("card_number, expected", valid_card_numbers())
-def test_valid_card_numbers(card_number, expected):
+)
+def test_various_formats(card_number, expected):
     assert get_mask_card_number(card_number) == expected
 
 
-# Тестирование обработки некорректных входных данных
-def test_invalid_card_numbers():
-    invalid_numbers = [
-        ("abcd1234abcd1234", "Ошибка: некорректный номер карты"),  # Неверный формат
-        ("12345678901234567890", "Ошибка: некорректный номер карты"),  # Слишком длинный номер
-        ("123456789012", "Ошибка: некорректный номер карты"),  # Слишком короткий номер
-        ("123456789012345", "Ошибка: некорректный номер карты"),  # Неверная длина
-        (" ", "Ошибка: некорректный номер карты")  # Пробелы
+@pytest.fixture
+def valid_account_number():
+    return "1234567890"
+
+@pytest.fixture
+def invalid_account_number_non_digit():
+    return "1234abcd"
+
+@pytest.fixture
+def short_account_number():
+    return "123"
+
+@pytest.fixture
+def empty_account_number():
+    return ""
+
+def test_mask_valid_account_number(valid_account_number):
+    assert get_mask_account(valid_account_number) == "**7890"
+
+def test_non_digit_account_number(invalid_account_number_non_digit):
+    assert get_mask_account(invalid_account_number_non_digit) == (
+        "Ошибка: номер счета должен содержать только цифры.")
+
+def test_short_account_number(short_account_number):
+    assert get_mask_account(short_account_number) == (
+        "Ошибка: номер счета должен содержать хотя бы 4 цифры.")
+
+def test_empty_account_number(empty_account_number):
+    assert get_mask_account(empty_account_number) == (
+        "Ошибка: номер счета должен содержать только цифры.")
+
+@pytest.mark.parametrize(
+    "account_number, expected",
+    [
+        ("1234567890", "**7890"),
+        ("1234 5678 90", "**7890"),
+        ("1234-5678-90", "Ошибка: номер счета должен содержать только цифры."),
+        ("1234abcd", "Ошибка: номер счета должен содержать только цифры."),
+        ("123", "Ошибка: номер счета должен содержать хотя бы 4 цифры."),
+        ("", "Ошибка: номер счета должен содержать только цифры."),
     ]
-
-    for card_number, expected in invalid_numbers:
-        assert get_mask_card_number(card_number) == expected
-
-# тесты для корректных номеров карт
-@pytest.mark.parametrize("card, expected", valid_card_numbers())
-def test_valid_card_number(card, expected):
-    assert get_mask_card_number(card) == expected
-
-# тесты для номеров карт с недопустимыми символами
-@pytest.mark.parametrize("card, expected", invalid_card_numbers())
-def test_invalid_card_number(card, expected):
-    assert get_mask_card_number(card) == expected
-
-# Тесты для пустого ввода
-def test_empty_input():
-    assert get_mask_card_number("") == "Ошибка: некорректный номер карты"  # Пустой ввод
-
-
-# тесты для корректных номеров счетов
-@pytest.mark.parametrize("acc, expected", valid_accounts())
-def test_valid_account(acc, expected):
-    assert get_mask_account(acc) == expected
-
-
-# тесты для номеров счетов с пробелами
-@pytest.mark.parametrize("acc, expected", accounts_with_spaces())
-def test_account_with_spaces(acc, expected):
-    assert get_mask_account(acc) == expected
-
-
-# тесты для номеров счетов с недопустимыми символами
-@pytest.mark.parametrize("acc, expected", accounts_with_invalid_chars())
-def test_account_with_invalid_chars(acc, expected):
-    assert get_mask_account(acc) == expected
-
-
-# Тесты для номеров счетов с неправильной длиной
-@pytest.mark.parametrize("acc", ["123", "12345678901234567890"])
-def test_account_with_wrong_length(acc):
-    assert get_mask_account(acc) == "Ошибка: некорректный номер счета"
-
-
-# Тест для пустого ввода
-def test_empty_input() -> None:
-    assert get_mask_account("") == "Ошибка: некорректный номер счета"  # Пустой ввод
+)
+def test_various_formats(account_number, expected):
+    assert get_mask_account(account_number) == expected
 
 
 if __name__ == "__masks__":
