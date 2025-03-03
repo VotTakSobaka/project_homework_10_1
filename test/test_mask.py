@@ -94,5 +94,5 @@ def test_various_formats(account_number, expected):
     assert get_mask_account(account_number) == expected
 
 
-if __name__ == "__masks__":
+if __name__ == "__main__":
     pytest.main()
