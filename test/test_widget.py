@@ -50,5 +50,5 @@ def test_get_date_no_date():
     assert get_date("T02:26:18.671407") == "01.01.0001"
 
 
-if __name__ == "__widget__":
+if __name__ == "__main__":
     pytest.main()

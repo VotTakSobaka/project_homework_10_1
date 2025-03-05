@@ -100,5 +100,5 @@ def test_sort_by_date_empty_list():
     assert sort_by_date([]) == []
 
 
-if __name__ == "__processing__":
+if __name__ == "__main__":
         pytest.main()
