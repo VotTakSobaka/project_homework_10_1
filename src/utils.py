@@ -20,6 +20,7 @@ def read_json(file_path: str) -> List[Dict[str, Any]]:
 load_dotenv()
 
 API_KEY = os.getenv('API_KEY')
+API_URL = "https://api.apilayer.com/exchangerates_data/latest"
 
 def convert_currency(transaction: Dict[str, Union[str, float]]) -> float:
     amount = transaction.get('amount')
