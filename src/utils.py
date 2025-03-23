@@ -1,11 +1,19 @@
 import json
 import requests
-from typing import Dict, Union
+from typing import List, Dict, Any, Union
 import os
 from dotenv import load_dotenv
-from typing import List, Dict, Any
+
+load_dotenv()
+
+API_KEY = os.getenv('API_KEY')
+API_URL = "https://api.apilayer.com/exchangerates_data/latest"
 
 def read_json(file_path: str) -> List[Dict[str, Any]]:
+    """
+    Читает JSON-файл и возвращает список словарей с данными о финансовых транзакциях.
+    Если файл пустой, содержит не список или не найден, возвращает пустой список.
+    """
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
@@ -16,22 +24,21 @@ def read_json(file_path: str) -> List[Dict[str, Any]]:
     except (FileNotFoundError, json.JSONDecodeError):
         return []
 
+def convert_currency(transaction: Dict[str, Union[str, Dict]]) -> float:
+    """
+    Конвертирует сумму транзакции в рубли, если валюта USD или EUR.
+    """
+    amount_data = transaction.get('operationAmount', {})
+    amount = float(amount_data.get('amount', 0))
+    currency_data = amount_data.get('currency', {})
+    currency_code = currency_data.get('code', 'RUB')
 
-load_dotenv()
-
-API_KEY = os.getenv('API_KEY')
-API_URL = "https://api.apilayer.com/exchangerates_data/latest"
-
-def convert_currency(transaction: Dict[str, Union[str, float]]) -> float:
-    amount = transaction.get('amount')
-    currency = transaction.get('currency')
-
-    if currency not in ['USD', 'EUR']:
+    if currency_code not in ['USD', 'EUR']:
         return amount
 
     params = {
         'symbols': 'RUB',
-        'base': currency
+        'base': currency_code
     }
 
     headers = {
