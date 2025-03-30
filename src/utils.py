@@ -1,55 +1,45 @@
-import json
-import requests
-from typing import List, Dict, Any, Union
 import os
-from dotenv import load_dotenv
+import logging
 
-load_dotenv()
+# Определяем путь к общей папке для логов
+logs_directory = "logs"
+os.makedirs(logs_directory, exist_ok=True)
 
-API_KEY = os.getenv('API_KEY')
-API_URL = "https://api.apilayer.com/exchangerates_data/latest"
+def setup_logger(name, log_file, level=logging.DEBUG):
+    """Настройка логера для записи в файл."""
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
 
-def read_json(file_path: str) -> List[Dict[str, Any]]:
-    """
-    Читает JSON-файл и возвращает список словарей с данными о финансовых транзакциях.
-    Если файл пустой, содержит не список или не найден, возвращает пустой список.
-    """
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            if isinstance(data, list):
-                return data
-            else:
-                return []
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
+    if logger.hasHandlers():
+        logger.handlers.clear()
 
-def convert_currency(transaction: Dict[str, Union[str, Dict]]) -> float:
-    """
-    Конвертирует сумму транзакции в рубли, если валюта USD или EUR.
-    """
-    amount_data = transaction.get('operationAmount', {})
-    amount = float(amount_data.get('amount', 0))
-    currency_data = amount_data.get('currency', {})
-    currency_code = currency_data.get('code', 'RUB')
+    file_handler = logging.FileHandler(log_file, mode='w')
+    file_handler.setLevel(level)
 
-    if currency_code not in ['USD', 'EUR']:
-        return amount
+    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(file_formatter)
 
-    params = {
-        'symbols': 'RUB',
-        'base': currency_code
-    }
+    logger.addHandler(file_handler)
 
-    headers = {
-        'apikey': API_KEY
-    }
+    return logger
 
-    response = requests.get(API_URL, headers=headers, params=params)
-    data = response.json()
+# Настраиваем логирование для модуля utils
+utils_logger = setup_logger('utils', os.path.join(logs_directory, 'utils.log'))
 
-    if 'rates' in data and 'RUB' in data['rates']:
-        rub_rate = data['rates']['RUB']
-        return amount * rub_rate
-    else:
-        return amount
+def get_mask_account(account_number: str) -> str:
+    """Замаскировать номер счета."""
+    utils_logger.info('Вызов функции get_mask_account.')
+
+    account_number = account_number.replace(" ", "")
+
+    if not account_number.isdigit():
+        utils_logger.error('Ошибка: номер счета должен содержать только цифры.')
+        return "Ошибка: номер счета должен содержать только цифры."
+
+    if len(account_number) < 4:
+        utils_logger.error('Ошибка: номер счета должен содержать хотя бы 4 цифры.')
+        return "Ошибка: номер счета должен содержать хотя бы 4 цифры."
+
+    masked_number = f"**{account_number[-4:]}"
+    utils_logger.info('Успешное замаскирование номера счета.')
+    return masked_number
